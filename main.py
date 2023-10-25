@@ -38,6 +38,7 @@ model = torch.hub.load('ultralytics/yolov5', 'custom', path, force_reload=True)
 output_dir = "nohelmet lp"
 os.makedirs(output_dir, exist_ok=True)
 
+# For images
 image_path = './Helmet Detection Dataset/test/images/IMG_5076_MOV-38_jpg.rf.7e5eb3bbcc477688344bbbdce2d2da5d.jpg'
 image = cv2.imread(image_path)
 image = cv2.resize(image, (1020, 600))
@@ -92,9 +93,10 @@ for tw in twowheelers:
 cv2.destroyAllWindows()
 
 
+# For videos
 # cap = cv2.VideoCapture('./output.mp4')
 # count = 0
-
+# violated_lp = []
 # while True:
 #     ret, frame = cap.read()
 #     if not ret:
@@ -127,10 +129,19 @@ cv2.destroyAllWindows()
 #             for license_plate in license_plates:
 #                 lx1, ly1, lx2, ly2, lconf, lclass_id = license_plate.tolist()
 #                 if x1 < lx1 < x2 and y1 < ly1 < y2:
-#                     if conf > 0.90:
-#                         license_plate_image = frame[int(y1):int(y2), int(x1):int(x2)]
-#                         output_path = os.path.join(output_dir, f"license_plate_{count}.jpg")
-#                         cv2.imwrite(output_path, license_plate_image)
+#                     if conf > 0.75:
+#                         tw_image = frame[int(y1):int(y2), int(x1):int(x2)]
+#                         tw_path = os.path.join(output_dir, f"{count}_two_wheeler.jpg")
+#                         cv2.imwrite(tw_path, tw_image)
+
+#                         lp_image = frame[int(ly1):int(ly2), int(lx1):int(lx2)]
+#                         lp_path = os.path.join(output_dir, f"{count}_license_plate.jpg")
+#                         cv2.imwrite(lp_path, lp_image)
+
+#                         lpnum = ocr_space_file(filename=lp_path, overlay=False, api_key=os.environ.get("OCR_SPACE_API"), language='eng')
+#                         if lpnum not in violated_lp:
+#                             violated_lp.append(lpnum)
+#                             print("Violated Licenseplate: {}".format(lpnum))
 
 #     frame = np.squeeze(results.render()[0])
 #     cv2.imshow("Video", frame)
