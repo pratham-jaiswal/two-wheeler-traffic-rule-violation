@@ -1,5 +1,5 @@
 # Two-Wheeler Traffic Rule Violation Detection
-This project is aimed at detecting and identifying traffic rule violations by two-wheeler riders, with a focus on the detection of violations related to helmet usage (and more in future). The project utilizes the [YOLOv5](https://github.com/ultralytics/yolov5) deep learning model to detect objects of interest, namely helmets, license plates, and motorcycles, in images or video frames.
+This project is aimed at detecting and identifying traffic rule violations by two-wheeler riders, with a focus on the detection of violations related to helmet usage (and more in future). The project utilizes the [YOLOv5](https://github.com/ultralytics/yolov5) deep learning model to detect objects of interest, namely helmets, license plates, and motorcycles, in images or video frames. It saved the images of two wheelers which violated the traffic rules, along with image of their license plates.
 
 ## Dataset
 The dataset used for this project is available at [Roboflow here](https://universe.roboflow.com/nckh-2023/helmet-detection-project/dataset/19). It includes images of two-wheelers captured under various conditions, with annotations for the detection of helmets, license plates, and motorcycles.
