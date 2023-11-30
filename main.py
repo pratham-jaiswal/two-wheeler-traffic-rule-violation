@@ -1,5 +1,5 @@
 import os
-from PIL import Image
+from PIL import Image, ImageDraw
 import cv2
 from roboflow import Roboflow
 from datetime import datetime, timezone, timedelta
@@ -29,6 +29,52 @@ def ocr_space_file(filename, overlay, api_key, language):
     lpnum = re.sub(r'[^a-zA-Z0-9]', '', lpnum)
     
     return lpnum
+
+def draw_detections(p1, p2, p3, img):
+    class_colors = {
+        'helmet': 'blue',
+        'motorcyclist': 'green',
+        'license_plate': 'red',
+        'face': 'darkmagenta',
+        'front': 'darkgoldenrod',
+        'rear': 'darkorchid'
+    }
+    
+    draw = ImageDraw.Draw(img)
+
+    preds = {'predictions': p1['predictions'] + p2['predictions'] + p3['predictions']}
+
+    for prediction in preds['predictions']:
+        x, y, width, height = (
+            prediction['x'],
+            prediction['y'],
+            prediction['width'],
+            prediction['height']
+        )
+        
+        x1 = x - width / 2
+        y1 = y - height / 2
+        x2 = x + width / 2
+        y2 = y + height / 2
+        
+        class_name = prediction['class']
+        confidence = prediction['confidence']
+        
+        label_color = class_colors.get(class_name, 'black')
+
+        if class_name=='motorcyclist':
+            draw.rectangle([x1, y1, x2, y1+14], fill=label_color)
+            label_position = (x1 + 5, y1 + 2)
+        else:
+            draw.rectangle([x1, y1-14, x2, y1], fill=label_color)
+            label_position = (x1 + 5, y1-12)
+            
+        draw.rectangle([x1, y1, x2, y2], outline=label_color, width=2)
+
+        label = f"{class_name} ({confidence:.2f})"
+        draw.text(label_position,label, fill='white')
+
+    return img
 
 # Roboflow API keys
 roboflow_api_key = config("ROBOFLOW_API_KEY")
@@ -60,7 +106,7 @@ folder_path = os.path.join(os.getcwd(), f"Violations/{current_date}")
 os.makedirs(folder_path, exist_ok=True)
 
 # Process every 60th frame
-for frame_number in tqdm(range(0, total_frames, 60), desc="Processing frames", unit="frames"):
+for frame_number in tqdm(range(0, total_frames, 180), desc="Processing frames", unit="frames"):
     ret, frame = cap.read()
     if not ret:
         break
@@ -70,13 +116,13 @@ for frame_number in tqdm(range(0, total_frames, 60), desc="Processing frames", u
     image_path = "temp_frame.jpg"
     pil_frame.save(image_path)
 
-    r1 = m1.predict(image_path, confidence=60, overlap=40)
+    r1 = m1.predict(image_path, confidence=40, overlap=40)
     pred1 = r1.json()['predictions']
 
     for pr1 in pred1:
         helmet_detected = False
         face_detected = False
-        front_detected = False
+        rear_detected = False
         more_than_two_detected = False
         num_faces_detected = 0
         num_helmets_detected = 0
@@ -91,15 +137,21 @@ for frame_number in tqdm(range(0, total_frames, 60), desc="Processing frames", u
             motorcyclist_image.save("temp_motorcyclist_image.jpg")
 
             # Lane check
-            r3 = m3.predict("temp_motorcyclist_image.jpg", confidence=0, overlap=60)
-            pred3 = r3.json()['predictions']
+            r3 = m3.predict("temp_motorcyclist_image.jpg", confidence=10, overlap=10)
+            lane = r3.json()
 
+            if lane['predictions']:
+                max_conf = max(lane['predictions'], key=lambda x: x['confidence'])
+                lane['predictions'] = [max_conf]
+            
+            pred3 = lane['predictions']
+            
             for lane_prediction in pred3:
                 if lane_prediction['class'] == 'rear':
-                    front_x, front_y, front_width, front_height = lane_prediction['x'], lane_prediction['y'], lane_prediction['width'], lane_prediction['height']
+                    rear_x, rear_y, rear_width, rear_height = lane_prediction['x'], lane_prediction['y'], lane_prediction['width'], lane_prediction['height']
 
-                    if motorcyclist_x1 < front_x < motorcyclist_x2 and motorcyclist_y1 < front_y < motorcyclist_y2:
-                        front_detected = True
+                    if motorcyclist_x1 < rear_x < motorcyclist_x2 and motorcyclist_y1 < rear_y < motorcyclist_y2:
+                        rear_detected = True
                         break
 
             # Face detected
@@ -159,14 +211,17 @@ for frame_number in tqdm(range(0, total_frames, 60), desc="Processing frames", u
             # More than two riding
             if num_faces_detected + num_helmets_detected > 2:
                 more_than_two_detected = True
+
+            r4 = m1.predict("temp_motorcyclist_image.jpg", confidence=60, overlap=40)
+            colored_motorcycle = draw_detections(r4.json(), r2.json(), lane, motorcyclist_image)
             
             # Violated license plate
-            if not helmet_detected or face_detected or front_detected or more_than_two_detected:
+            if not helmet_detected or face_detected or rear_detected or more_than_two_detected:
                 
                 violation_names = []
                 if not helmet_detected or face_detected:
                     violation_names.append('no_helmet')
-                if front_detected:
+                if rear_detected:
                     violation_names.append('wrong_lane')
                 if more_than_two_detected:
                     violation_names.append('triple_riding')
@@ -196,7 +251,7 @@ for frame_number in tqdm(range(0, total_frames, 60), desc="Processing frames", u
                             os.makedirs(image_folder_path, exist_ok=True)
 
                             violated_motorcycle_image_path = os.path.join(image_folder_path, f"{lpnum} - motorcyclist.jpg")
-                            motorcyclist_image.save(violated_motorcycle_image_path)
+                            colored_motorcycle.save(violated_motorcycle_image_path)
 
                             violated_motorcycle_lp_image_path = os.path.join(image_folder_path, f"{lpnum} - license_plate.jpg")
                             license_plate_image.save(violated_motorcycle_lp_image_path)
@@ -216,7 +271,7 @@ for frame_number in tqdm(range(0, total_frames, 60), desc="Processing frames", u
                     os.makedirs(image_folder_path, exist_ok=True)
                     violated_motorcycle_image_path = os.path.join(image_folder_path, f"motorcyclist.jpg")
 
-                    motorcyclist_image.save(violated_motorcycle_image_path)
+                    colored_motorcycle.save(violated_motorcycle_image_path)
 
 if os.path.exists("temp_motorcyclist_image.jpg"):
     os.remove("temp_motorcyclist_image.jpg")
