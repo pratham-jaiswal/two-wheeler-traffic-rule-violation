@@ -1,13 +1,13 @@
 import os
 from PIL import Image, ImageDraw
 import cv2
-from roboflow import Roboflow
 from datetime import datetime, timezone, timedelta
 import requests
 import json
 import re
 from tqdm import tqdm
 from decouple import config
+from inference_sdk import InferenceHTTPClient, InferenceConfiguration
 
 def ocr_space_file(filename, overlay, api_key, language):
     payload = {
@@ -79,17 +79,26 @@ def draw_detections(p1, p2, p3, img):
 # Roboflow API keys
 roboflow_api_key = config("ROBOFLOW_API_KEY")
 
-# Initialize Roboflow instances
-rf = Roboflow(api_key=roboflow_api_key)
+custom_configuration = InferenceConfiguration(confidence_threshold=0.4, iou_threshold=0.4)
+client1 = InferenceHTTPClient(
+    api_url="https://detect.roboflow.com",
+    api_key=roboflow_api_key
+)
+client1.configure(custom_configuration)
 
-p1 = rf.workspace().project("helmet-detection-project")
-m1 = p1.version(13).model
+custom_configuration = InferenceConfiguration(confidence_threshold=0.4, iou_threshold=0.3)
+client2 = InferenceHTTPClient(
+    api_url="https://detect.roboflow.com",
+    api_key=roboflow_api_key
+)
+client2.configure(custom_configuration)
 
-p2 = rf.workspace().project("face-detection-mik1i")
-m2 = p2.version(21).model
-
-p3 = rf.workspace().project("two-wheeler-lane-detection")
-m3 = p3.version(3).model
+custom_configuration = InferenceConfiguration(confidence_threshold=0.1, iou_threshold=0.1)
+client3 = InferenceHTTPClient(
+    api_url="https://detect.roboflow.com",
+    api_key=roboflow_api_key
+)
+client3.configure(custom_configuration)
 
 video_path = 'input.mp4'
 cap = cv2.VideoCapture(video_path)
@@ -116,8 +125,8 @@ for frame_number in tqdm(range(0, total_frames, 180), desc="Processing frames", 
     image_path = "temp_frame.jpg"
     pil_frame.save(image_path)
 
-    r1 = m1.predict(image_path, confidence=40, overlap=40)
-    pred1 = r1.json()['predictions']
+    r1 = client1.infer(image_path, model_id="helmet-detection-project/13")
+    pred1 = r1['predictions']
 
     for pr1 in pred1:
         helmet_detected = False
@@ -137,8 +146,8 @@ for frame_number in tqdm(range(0, total_frames, 180), desc="Processing frames", 
             motorcyclist_image.save("temp_motorcyclist_image.jpg")
 
             # Lane check
-            r3 = m3.predict("temp_motorcyclist_image.jpg", confidence=10, overlap=10)
-            lane = r3.json()
+            r3 = client3.infer("temp_motorcyclist_image.jpg", model_id="two-wheeler-lane-detection/3")
+            lane = r3
 
             if lane['predictions']:
                 max_conf = max(lane['predictions'], key=lambda x: x['confidence'])
@@ -155,8 +164,8 @@ for frame_number in tqdm(range(0, total_frames, 180), desc="Processing frames", 
                         break
 
             # Face detected
-            r2 = m2.predict("temp_motorcyclist_image.jpg", confidence=40, overlap=30)
-            pred2 = r2.json()['predictions']
+            r2 = client2.infer("temp_motorcyclist_image.jpg", model_id="face-detection-mik1i/21")
+            pred2 = r2['predictions']
 
             for face_prediction in pred2:
                 if face_prediction['class'] == 'face':
@@ -212,8 +221,9 @@ for frame_number in tqdm(range(0, total_frames, 180), desc="Processing frames", 
             if num_faces_detected + num_helmets_detected > 2:
                 more_than_two_detected = True
 
-            r4 = m1.predict("temp_motorcyclist_image.jpg", confidence=60, overlap=40)
-            colored_motorcycle = draw_detections(r4.json(), r2.json(), lane, motorcyclist_image)
+            # r4 = m1.predict("temp_motorcyclist_image.jpg", confidence=60, overlap=40)
+            r4 = client1.infer("temp_motorcyclist_image.jpg", model_id="helmet-detection-project/13")
+            colored_motorcycle = draw_detections(r4, r2, lane, motorcyclist_image)
             
             # Violated license plate
             if not helmet_detected or face_detected or rear_detected or more_than_two_detected:
@@ -233,7 +243,6 @@ for frame_number in tqdm(range(0, total_frames, 180), desc="Processing frames", 
                 for pr11 in pred1:
                     if pr11['class'] == 'license_plate':
                         license_plate_x, license_plate_y, license_plate_width, license_plate_height = pr11['x'], pr11['y'], pr11['width'], pr11['height']
-                        
                         if motorcyclist_x1 < license_plate_x < motorcyclist_x2 and motorcyclist_y1 < license_plate_y < motorcyclist_y2:
                             license_plate_x1, license_plate_y1 = int(license_plate_x - license_plate_width / 2), int(license_plate_y - license_plate_height / 2)
                             license_plate_x2, license_plate_y2 = int(license_plate_x + license_plate_width / 2), int(license_plate_y + license_plate_height / 2)
