@@ -1,0 +1,6 @@
+Pillow
+opencv-python
+roboflow
+requests
+tqdm
+python-decouple
