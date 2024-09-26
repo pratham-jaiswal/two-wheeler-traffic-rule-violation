@@ -53,6 +53,10 @@ The datasets used for this project are [Helmet Detection Project](https://univer
     ROBOFLOW_API_KEY=YOUR_ROBOFLOW_API_KEY  
     ```
 - Put the video in your directory, which contains ***main.py***, with the name ***input.mp4***.
+- Install the required libraries.
+   ```sh
+   pip install -r requirements.txt
+   ```
 - Run the ***main.py***.
 
 ## License
