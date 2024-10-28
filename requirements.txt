@@ -1,6 +1,6 @@
 Pillow
 opencv-python
-roboflow
+inference-sdk
 requests
 tqdm
 python-decouple
