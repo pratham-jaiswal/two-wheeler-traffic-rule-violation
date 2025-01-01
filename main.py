@@ -10,6 +10,9 @@ from dotenv import load_dotenv
 from inference_sdk import InferenceHTTPClient, InferenceConfiguration
 from super_image import DrlnModel, ImageLoader
 
+import warnings
+warnings.filterwarnings('ignore')
+
 load_dotenv()
 
 def upscale_image(image_path, scale):
