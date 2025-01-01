@@ -141,6 +141,8 @@ for frame_number in tqdm(range(0, total_frames, 180), desc="Processing frames", 
     upscale_image(image_path, 4)
     image_path = "temp_frame_4x.png"
 
+    pil_frame = Image.open(image_path)
+
     r1 = client1.infer(image_path, model_id="helmet-detection-project/13")
     pred1 = r1['predictions']
 
@@ -266,7 +268,15 @@ for frame_number in tqdm(range(0, total_frames, 180), desc="Processing frames", 
                             license_plate_image = pil_frame.crop((license_plate_x1, license_plate_y1, license_plate_x2, license_plate_y2))
                             
                             license_plate_image.save("temp_lp.jpg")
-                            lpnum = ocr_space_file(filename="temp_lp.jpg", overlay=False, api_key=os.getenv("OCR_SPACE_API"), language='eng')   
+
+                            
+                            ## WARNING: Upscaling further may slow down the process, decrease OCR accuracy, and distort the image.
+                            ## I would suggest comenting the above upscale_image() function and uncommenting the below code if you want to upscale the license plate.
+                            
+                            # upscale_image("temp_lp.jpg", 4)
+                            # license_plate_image = Image.open("temp_lp_4x.png")
+                            
+                            # lpnum = ocr_space_file(filename="temp_lp_4x.jpg", overlay=False, api_key=os.getenv("OCR_SPACE_API"), language='eng')   
 
                             if lpnum.strip():
                                 image_name = lpnum + " - " + image_name
