@@ -39,12 +39,8 @@ def ocr_space_file(filename, overlay, api_key, language):
                           data=payload,
                           )
     data = json.loads(r.content.decode())
+    lpnum = data["ParsedResults"][0]["ParsedText"].replace('\n', '').replace('\\n', '').replace(' ', '')
 
-    lines = data["ParsedResults"][0]["TextOverlay"]["Lines"]
-
-    lpnum = "".join(line["LineText"] for line in lines)
-    lpnum = re.sub(r'[^a-zA-Z0-9]', '', lpnum)
-    
     return lpnum
 
 def draw_detections(p1, p2, p3, img):
@@ -142,10 +138,10 @@ for frame_number in tqdm(range(0, total_frames, 180), desc="Processing frames", 
     image_path = "temp_frame.jpg"
     pil_frame.save(image_path)
 
-    upscale_image(image_path, 4)
-    image_path = "temp_frame_4x.png"
-
-    pil_frame = Image.open(image_path)
+    ## Can extremely slow down the process as the bigger the image the more resources it needs to be upscaled.
+    # upscale_image(image_path, 2)
+    # image_path = "temp_frame_4x.png"
+    # pil_frame = Image.open(image_path)
 
     r1 = client1.infer(image_path, model_id="helmet-detection-project/13")
     pred1 = r1['predictions']
@@ -262,49 +258,47 @@ for frame_number in tqdm(range(0, total_frames, 180), desc="Processing frames", 
                 image_name = ", ".join(violation_names) + f" - {timestamp}"
                 lp_detected = False
 
-                for pr11 in pred1:
+                for pr11 in r4["predictions"]:
                     if pr11['class'] == 'license_plate':
                         license_plate_x, license_plate_y, license_plate_width, license_plate_height = pr11['x'], pr11['y'], pr11['width'], pr11['height']
-                        if motorcyclist_x1 < license_plate_x < motorcyclist_x2 and motorcyclist_y1 < license_plate_y < motorcyclist_y2:
-                            license_plate_x1, license_plate_y1 = int(license_plate_x - license_plate_width / 2), int(license_plate_y - license_plate_height / 2)
-                            license_plate_x2, license_plate_y2 = int(license_plate_x + license_plate_width / 2), int(license_plate_y + license_plate_height / 2)
-            
-                            license_plate_image = pil_frame.crop((license_plate_x1, license_plate_y1, license_plate_x2, license_plate_y2))
-                            
-                            license_plate_image.save("temp_lp.jpg")
+                        license_plate_x1, license_plate_y1 = int(license_plate_x - license_plate_width / 2), int(license_plate_y - license_plate_height / 2)
+                        license_plate_x2, license_plate_y2 = int(license_plate_x + license_plate_width / 2), int(license_plate_y + license_plate_height / 2)
+        
+                        license_plate_image = motorcyclist_image.crop((license_plate_x1, license_plate_y1, license_plate_x2, license_plate_y2))
+                        
+                        license_plate_image.save("temp_lp.jpg")
 
-                            
-                            ## WARNING: Upscaling further may slow down the process, decrease OCR accuracy, and distort the image.
-                            ## I would suggest comenting the above upscale_image() function and uncommenting the below code if you want to upscale the license plate.
+                        upscale_image("temp_lp.jpg", 4)
+                        license_plate_image = Image.open("temp_lp_4x.png")
+                        
+                        lpnum = ocr_space_file(filename="temp_lp_4x.png", overlay=False, api_key=os.getenv("OCR_SPACE_API"), language='eng')   
+                        
+                        print("got: ", lpnum)
+                        if lpnum.strip():
+                            print("yes")
+                            image_name = lpnum + " - " + image_name
+                            print(image_name)
+                        else:
+                            print("no")
+                            image_name = image_name
+                        image_folder_path = os.path.join(folder_path, image_name)
+                        os.makedirs(image_folder_path, exist_ok=True)
 
-                            # upscale_image("temp_lp.jpg", 4)
-                            # license_plate_image = Image.open("temp_lp_4x.png")
-                            
-                            # lpnum = ocr_space_file(filename="temp_lp_4x.jpg", overlay=False, api_key=os.getenv("OCR_SPACE_API"), language='eng')   
-                            lpnum = ocr_space_file(filename="temp_lp.jpg", overlay=False, api_key=os.getenv("OCR_SPACE_API"), language='eng') 
-                            
-                            if lpnum.strip():
-                                image_name = lpnum + " - " + image_name
-                            else:
-                                image_name = image_name
-                            image_folder_path = os.path.join(folder_path, image_name)
-                            os.makedirs(image_folder_path, exist_ok=True)
+                        violated_motorcycle_image_path = os.path.join(image_folder_path, f"{lpnum} - motorcyclist.jpg")
+                        colored_motorcycle.save(violated_motorcycle_image_path)
 
-                            violated_motorcycle_image_path = os.path.join(image_folder_path, f"{lpnum} - motorcyclist.jpg")
-                            colored_motorcycle.save(violated_motorcycle_image_path)
+                        violated_motorcycle_lp_image_path = os.path.join(image_folder_path, f"{lpnum} - license_plate.jpg")
+                        license_plate_image.save(violated_motorcycle_lp_image_path)
 
-                            violated_motorcycle_lp_image_path = os.path.join(image_folder_path, f"{lpnum} - license_plate.jpg")
-                            license_plate_image.save(violated_motorcycle_lp_image_path)
+                        lp_text_path = os.path.join(image_folder_path, f"{lpnum} - license_plate_number.txt")
+                        with open(lp_text_path, 'w') as file:
+                            file.write(f"Violated License Plate Number - {lpnum}")
 
-                            lp_text_path = os.path.join(image_folder_path, f"{lpnum} - license_plate_number.txt")
-                            with open(lp_text_path, 'w') as file:
-                                file.write(f"Violated License Plate Number - {lpnum}")
+                        lp_detected = True
 
-                            lp_detected = True
-
-                            if os.path.exists("temp_lp.jpg"):
-                                os.remove("temp_lp.jpg")
-                            break
+                        if os.path.exists("temp_lp.jpg"):
+                            os.remove("temp_lp.jpg")
+                        break
 
                 if not lp_detected:
                     image_folder_path = os.path.join(folder_path, image_name)
