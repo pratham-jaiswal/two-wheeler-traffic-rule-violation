@@ -8,6 +8,7 @@ import re
 from tqdm import tqdm
 from dotenv import load_dotenv
 from inference_sdk import InferenceHTTPClient, InferenceConfiguration
+from super_image import DrlnModel, ImageLoader
 
 load_dotenv()
 
