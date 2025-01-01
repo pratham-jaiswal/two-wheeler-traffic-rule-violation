@@ -294,6 +294,8 @@ for frame_number in tqdm(range(0, total_frames, 180), desc="Processing frames", 
 
                         if os.path.exists("temp_lp.jpg"):
                             os.remove("temp_lp.jpg")
+                        if os.path.exists("temp_lp_4x.png"):
+                            os.remove("temp_lp_4x.png")
                         break
 
                 if not lp_detected:
