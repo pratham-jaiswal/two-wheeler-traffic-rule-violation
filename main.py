@@ -273,13 +273,9 @@ for frame_number in tqdm(range(0, total_frames, 180), desc="Processing frames", 
                         
                         lpnum = ocr_space_file(filename="temp_lp_4x.png", overlay=False, api_key=os.getenv("OCR_SPACE_API"), language='eng')   
                         
-                        print("got: ", lpnum)
                         if lpnum.strip():
-                            print("yes")
                             image_name = lpnum + " - " + image_name
-                            print(image_name)
                         else:
-                            print("no")
                             image_name = image_name
                         image_folder_path = os.path.join(folder_path, image_name)
                         os.makedirs(image_folder_path, exist_ok=True)
