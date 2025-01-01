@@ -42,6 +42,8 @@ The datasets used for this project are [Helmet Detection Project](https://univer
    - Saves the violated motorcycle image along with its license plate image and text.
    - Records the list of violations for each image.
 
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/pratham-jaiswal/two-wheeler-traffic-rule-violation/blob/main/main.ipynb "Open in Colab")
+
 ## Getting Started
 - Clone this repository,
     ```bash
