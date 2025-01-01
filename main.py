@@ -6,8 +6,21 @@ import requests
 import json
 import re
 from tqdm import tqdm
-from decouple import config
+from dotenv import load_dotenv
 from inference_sdk import InferenceHTTPClient, InferenceConfiguration
+
+load_dotenv()
+
+def upscale_image(image_path, scale):
+    image = Image.open(image_path)
+
+    image_name = os.path.splitext(image_path)[0]
+
+    model = DrlnModel.from_pretrained('eugenesiow/drln', scale=scale)
+    inputs = ImageLoader.load_image(image)
+    preds = model(inputs)
+
+    ImageLoader.save_image(preds, f'{image_name}_{scale}x.png')
 
 def ocr_space_file(filename, overlay, api_key, language):
     payload = {
@@ -77,7 +90,7 @@ def draw_detections(p1, p2, p3, img):
     return img
 
 # Roboflow API keys
-roboflow_api_key = config("ROBOFLOW_API_KEY")
+roboflow_api_key = os.getenv("ROBOFLOW_API_KEY")
 
 custom_configuration = InferenceConfiguration(confidence_threshold=0.4, iou_threshold=0.4)
 client1 = InferenceHTTPClient(
@@ -124,6 +137,9 @@ for frame_number in tqdm(range(0, total_frames, 180), desc="Processing frames", 
 
     image_path = "temp_frame.jpg"
     pil_frame.save(image_path)
+
+    upscale_image(image_path, 4)
+    image_path = "temp_frame_4x.png"
 
     r1 = client1.infer(image_path, model_id="helmet-detection-project/13")
     pred1 = r1['predictions']
@@ -250,7 +266,7 @@ for frame_number in tqdm(range(0, total_frames, 180), desc="Processing frames", 
                             license_plate_image = pil_frame.crop((license_plate_x1, license_plate_y1, license_plate_x2, license_plate_y2))
                             
                             license_plate_image.save("temp_lp.jpg")
-                            lpnum = ocr_space_file(filename="temp_lp.jpg", overlay=False, api_key=config("OCR_SPACE_API"), language='eng')   
+                            lpnum = ocr_space_file(filename="temp_lp.jpg", overlay=False, api_key=os.getenv("OCR_SPACE_API"), language='eng')   
 
                             if lpnum.strip():
                                 image_name = lpnum + " - " + image_name
@@ -284,6 +300,13 @@ for frame_number in tqdm(range(0, total_frames, 180), desc="Processing frames", 
 
 if os.path.exists("temp_motorcyclist_image.jpg"):
     os.remove("temp_motorcyclist_image.jpg")
+
+if os.path.exists("temp_frame.jpg"):
+    os.remove("temp_frame.jpg")
+
+if os.path.exists("temp_frame_4x.png"):
+    os.remove("temp_frame_4x.png")
+
 cap.release()
 
 print("Video processing completed.")
