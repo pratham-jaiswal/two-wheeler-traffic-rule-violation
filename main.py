@@ -39,6 +39,8 @@ def ocr_space_file(filename, overlay, api_key, language):
                           data=payload,
                           )
     data = json.loads(r.content.decode())
+    if len(data["ParsedResults"]) == 0:
+        return ""
     lpnum = data["ParsedResults"][0]["ParsedText"].replace('\n', '').replace('\\n', '').replace(' ', '')
 
     return lpnum
