@@ -15,6 +15,13 @@ warnings.filterwarnings('ignore')
 
 load_dotenv()
 
+def _set_if_undefined(var: str):
+    if not os.environ.get(var):
+        os.environ[var] = getpass.getpass(f"Please provide your {var}")
+
+_set_if_undefined("ROBOFLOW_API_KEY")
+_set_if_undefined("OCR_SPACE_API")
+
 def upscale_image(image_path, scale):
     image = Image.open(image_path)
 
@@ -178,10 +185,7 @@ for frame_number in tqdm(range(0, total_frames, 180), desc="Processing frames", 
             for lane_prediction in pred3:
                 if lane_prediction['class'] == 'rear':
                     rear_x, rear_y, rear_width, rear_height = lane_prediction['x'], lane_prediction['y'], lane_prediction['width'], lane_prediction['height']
-
-                    if motorcyclist_x1 < rear_x < motorcyclist_x2 and motorcyclist_y1 < rear_y < motorcyclist_y2:
-                        rear_detected = True
-                        break
+                    rear_detected = True
 
             # Face detected
             r2 = client2.infer("temp_motorcyclist_image.jpg", model_id="face-detection-mik1i/21")
