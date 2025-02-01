@@ -1,7 +1,7 @@
 # Two-Wheeler Traffic Rule Violation Detection
 This project is aimed at detecting and identifying traffic rule violations by two-wheeler riders, with a focus on the detection of [violations](https://github.com/pratham-jaiswal/two-wheeler-traffic-rule-violation/edit/main/README.md#detected-objects). The project utilizes three Models trained on Roboflow Cloud <sup>[[1]](https://universe.roboflow.com/nckh-2023/helmet-detection-project/model/13)[[2]](https://universe.roboflow.com/mohamed-traore-2ekkp/face-detection-mik1i/model/21)[[3]](https://universe.roboflow.com/prathamjaiswal/two-wheeler-lane-detection/model/3)</sup> to detect [objects of interest](https://github.com/pratham-jaiswal/two-wheeler-traffic-rule-violation/edit/main/README.md#detected-objects) in video frames. It saves the images of two wheelers which violated the traffic rules, along with image of their license plates.
 
-> Do check out my [blog](https://blogs.pratham-jaiswal.club/build-a-two-wheeler-traffic-rule-violation-detector-no-ml-dl-0da3ad626c7d) on entire working of this project.
+> Do check out my [blog](https://medium.com/@pratham52/build-a-two-wheeler-traffic-rule-violation-detector-no-ml-dl-0da3ad626c7d) on entire working of this project.
 
 ## Dataset
 The datasets used for this project are [Helmet Detection Project](https://universe.roboflow.com/nckh-2023/helmet-detection-project), [Face Detection](https://universe.roboflow.com/mohamed-traore-2ekkp/face-detection-mik1i), and [Two Wheeler Lane Detection](https://universe.roboflow.com/prathamjaiswal/two-wheeler-lane-detection).
