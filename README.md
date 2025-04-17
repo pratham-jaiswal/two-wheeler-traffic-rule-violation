@@ -1,3 +1,6 @@
+[![Read on Medium](https://img.shields.io/badge/Read_on-Medium-black?logo=medium&style=for-the-badge)](https://medium.com/@pratham52/build-a-two-wheeler-traffic-rule-violation-detector-no-ml-dl-0da3ad626c7d)
+[![Buy Me a Coffee](https://img.shields.io/badge/Buy_Me_a_Coffee-support-yellow?logo=buy-me-a-coffee&style=for-the-badge)](https://buymeacoffee.com/maxxdevs)
+
 # Two-Wheeler Traffic Rule Violation Detection
 This project is aimed at detecting and identifying traffic rule violations by two-wheeler riders, with a focus on the detection of [violations](https://github.com/pratham-jaiswal/two-wheeler-traffic-rule-violation/edit/main/README.md#detected-objects). The project utilizes three Models trained on Roboflow Cloud <sup>[[1]](https://universe.roboflow.com/nckh-2023/helmet-detection-project/model/13)[[2]](https://universe.roboflow.com/mohamed-traore-2ekkp/face-detection-mik1i/model/21)[[3]](https://universe.roboflow.com/prathamjaiswal/two-wheeler-lane-detection/model/3)</sup> to detect [objects of interest](https://github.com/pratham-jaiswal/two-wheeler-traffic-rule-violation/edit/main/README.md#detected-objects) in video frames. It saves the images of two wheelers which violated the traffic rules, along with image of their license plates.
 
