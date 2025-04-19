@@ -4,3 +4,4 @@ inference-sdk
 requests
 tqdm
 python-decouple
+super-image
