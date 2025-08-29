@@ -67,5 +67,3 @@ Get Sample Videos [here](https://drive.google.com/drive/folders/1pB4LNzpuwOIWiqH
 
 ## License
 This project is provided under the [MIT License](https://github.com/pratham-jaiswal/two-wheeler-traffic-rule-violation/blob/main/LICENSE).
-
-<!-- GitAds-Verify: YN1XQUD7WLJ4GDY3P4IHINKFCY4J91N4 -->
